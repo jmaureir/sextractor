@@ -1,0 +1,47 @@
+#!/bin/bash
+#
+# Get a job/script memory execution footprint
+#  
+# By Juan Carlos Maureira. 2013
+# Center for Mathematical Modeling
+# University of Chile
+#
+
+# Sampling time in seconds. default 0.5 seconds
+WAIT=0.1
+
+if [ $# != 1 ]; then
+   echo "usage: $0 {command_name}"
+   exit 1
+fi
+
+NAME=$1
+SAMPLE=0
+
+while [ 1 ];
+do
+   PID=`pidof $NAME`
+   if [ "$PID" != "" ]; then
+     if [ $SAMPLE -eq 0 ]; then
+        VMSTAT=(`cat /proc/$PID/status | grep Vm | xargs`)
+        echo -n "Sample "
+        for i in `seq 0 3 36`
+        do
+           echo -n "${VMSTAT[i]} " 
+        done
+        echo ""
+     fi
+     let "SAMPLE=$SAMPLE+1"
+     echo -n "$SAMPLE "
+     VMSTAT=(`cat /proc/$PID/status | grep Vm | xargs`)
+     for i in `seq 1 3 37`
+     do
+        echo -n "${VMSTAT[i]} " 
+     done
+     echo ""
+     sleep $WAIT
+   else
+     SAMPLE=0
+     sleep $WAIT
+   fi
+done
