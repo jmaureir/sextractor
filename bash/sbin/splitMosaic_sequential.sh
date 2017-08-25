@@ -104,8 +104,15 @@ if [ $NUM_CCDS -gt 0 ]; then
             echo "pimcopy exit with error code $EXIT_CODE"
             exit $EXIT_CODE
         fi
-
     done
+
+    # check number of extracted CCDs
+    NUM_EXTRACTED_CCDS=`find $OUTPUT_DIR -name "$OBJECT_*_$MJD_*.$EXT" | wc -l`
+    if [ $NUM_EXTRACTED_CCDS -ne $NUM_CCDS ] ; then
+        echo "ERROR: extracted ccds differs from the infomed in the mosaic header $NUM_EXTRACTED_CCDS!=$NUM_CCDS"
+        exit 2
+    fi
+    echo "Extracted $NUM_EXTRACTED_CCDS CCDs"
 else
     echo "No CCDs found in $MOSAIC_IMAGE. NEXTEND=$NUM_CCDS"
     exit 1
