@@ -1,13 +1,13 @@
 #!/usr/bin/env python
 # Distributed Sextractor for multiple mosaic images
 # Spark version 
-# updated 22/08/2017
+# updated 10/12/2018
 # (c) 2017 - Juan Carlos Maureira - Center for Mathematical Modeling
 
 from __future__ import print_function
 from pyspark import SparkContext,SparkConf
 
-import pyfits
+from astropy.io import fits
 import subprocess
 import os
 
@@ -47,7 +47,7 @@ def getCCDList(file):
     print("expanding %s" %(file))
     hdulist = None
     try:
-        hdulist = pyfits.open(file)
+        hdulist = fits.open(file)
     except Exception as e:
         raise RuntimeError("error opening %s. exception: %s. pwd %s" % (file,e,os.getcwd()))
 
@@ -59,7 +59,7 @@ def getCCDList(file):
  
     for idx, hdu in enumerate(hdulist):
         name = hdu.name
-        keys = hdu.header.keys()
+        keys = list(hdu.header.keys())
         print(idx, name, len(keys))
         if idx != 0:
             hdu_list.append({
@@ -77,8 +77,8 @@ def getCCDList(file):
 @using(MySparkContext)
 def writeCCD(ccd_handler):
     print("writing ccd %s" %(ccd_handler['name']))
-    data = pyfits.getdata(ccd_handler['file'], extname=ccd_handler['name'])
-    hdu = pyfits.ImageHDU(data)
+    data = fits.getdata(ccd_handler['file'], extname=ccd_handler['name'])
+    hdu = fits.ImageHDU(data)
 
     ccd_file = "out/%s-%s-%s.fits" %(ccd_handler['object'],ccd_handler['name'],ccd_handler['mjd'])
 
@@ -94,7 +94,7 @@ def writeCCD(ccd_handler):
 def runSextractor(ccd_handler):
     print("Running sextractor on %s" %(ccd_handler["ccd_file"]))
     catalog_file="%s.catalog" %(ccd_handler["ccd_file"])
-    cmd=["sex",ccd_handler["ccd_file"],"-c", "etc/default.sex","-CATALOG_NAME",catalog_file]
+    cmd=["sextractor",ccd_handler["ccd_file"],"-c", "etc/default.sex","-CATALOG_NAME",catalog_file]
 
     proc=subprocess.Popen(cmd,stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     proc.wait()
